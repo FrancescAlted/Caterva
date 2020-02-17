@@ -561,14 +561,14 @@ int caterva_repart_chunk(int8_t *chunk, int size_chunk, void *src, int size_src,
         }
         /* Calculate if padding with 0s is needed for this subpartition */
         for (int i = CATERVA_MAXDIM - 1; i >= 0; i--) {
-            if (orig[i] + d_spshape[i] > d_spshape[i]) {
+            if (orig[i] + d_spshape[i] > d_pshape[i]) {
                 actual_spsize[i] = d_pshape[i] - orig[i];
             } else {
                 actual_spsize[i] = d_spshape[i];
             }
         }
         int32_t seq_copylen = actual_spsize[7] * carr->ctx->cparams.typesize;
-        /* Copy each line of data from src_b to chunk */
+        /* Reorder each line of data from src_b to chunk */
         int64_t ii[CATERVA_MAXDIM];
         for (ii[6] = 0; ii[6] < actual_spsize[6]; ii[6]++) {
             for (ii[5] = 0; ii[5] < actual_spsize[5]; ii[5]++) {
@@ -644,7 +644,7 @@ int caterva_derepart_chunk(int8_t *chunk, int size_chunk, int8_t *rchunk, int si
         }
         /* Calculate if padding with 0s is needed for this subchunk */
         for (int i = CATERVA_MAXDIM - 1; i >= 0; i--) {
-            if (orig[i] + d_spshape[i] > d_spshape[i]) {
+            if (orig[i] + d_spshape[i] > d_pshape[i]) {
                 actual_spsize[i] = d_pshape[i] - orig[i];
             } else {
                 actual_spsize[i] = d_spshape[i];
@@ -688,7 +688,6 @@ int caterva_derepart_chunk(int8_t *chunk, int size_chunk, int8_t *rchunk, int si
 }
 
 
-
 int caterva_append(caterva_array_t *carr, void *part, int64_t partsize) {
     if (partsize != (int64_t) carr->psize * carr->ctx->cparams.typesize) {
         return -1;
@@ -723,7 +722,7 @@ int caterva_append(caterva_array_t *carr, void *part, int64_t partsize) {
 
 int caterva_append_2(caterva_array_t *carr, void *part, int64_t partsize) {
     if (carr->filled) {
-        printf("Already filled");
+        printf("Already filled!");
         return -1;
     }
     if (partsize != carr->next_size * carr->ctx->cparams.typesize) {
@@ -1143,7 +1142,7 @@ int caterva_to_buffer_2(caterva_array_t *src, void *dest) {
             s_pshape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->pshape[i];
         }
 
-        /* Initialise a chunk buffer */
+        /* Initialise chunk buffers */
         caterva_ctx_t *ctx = src->ctx;
         int typesize = src->sc->typesize;
         size_t size_rchunk = (size_t) src->epsize * typesize;
@@ -1178,7 +1177,7 @@ int caterva_to_buffer_2(caterva_array_t *src, void *dest) {
                 }
             }
 
-            /* Copy each line of data from chunk to arr */
+            /* Copy each line of data from chunk to d_b */
             int64_t s_coord_f, d_coord_f, s_a, d_a;
             int64_t ii[CATERVA_MAXDIM];
             for (ii[6] = 0; ii[6] < r[6]; ii[6]++) {
@@ -1218,6 +1217,23 @@ int caterva_to_buffer_2(caterva_array_t *src, void *dest) {
     }
 
 }
+
+
+int caterva_to_buffer_3(caterva_array_t *src, void *dest) {
+    int64_t start_[CATERVA_MAXDIM];
+    int64_t stop_[CATERVA_MAXDIM];
+    int64_t d_pshape_[CATERVA_MAXDIM];
+    for (int i = 0; i < CATERVA_MAXDIM; ++i) {
+        start_[i] = 0;
+        stop_[i] = src->shape[i];
+        d_pshape_[i] = src->shape[i];
+    }
+    caterva_dims_t start = caterva_new_dims(start_, src->ndim);
+    caterva_dims_t stop = caterva_new_dims(stop_, src->ndim);
+    caterva_dims_t d_pshape = caterva_new_dims(d_pshape_, src->ndim);
+    caterva_get_slice_buffer_2(dest, src, &start, &stop, &d_pshape);
+}
+
 
 int caterva_get_slice_buffer(void *dest, caterva_array_t *src, caterva_dims_t *start,
                              caterva_dims_t *stop, caterva_dims_t *d_pshape) {

@@ -336,6 +336,8 @@ int caterva_to_buffer(caterva_array_t *src, void *dest);
 
 int caterva_to_buffer_2(caterva_array_t *src, void *dest);
 
+int caterva_to_buffer_3(caterva_array_t *src, void *dest);
+
 
 /**
  * @brief Get a slice into an empty caterva container from another caterva container

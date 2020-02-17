@@ -164,14 +164,14 @@ LWTEST_FIXTURE(roundtrip, 6_dim) {
     test_roundtrip_sframe(data->ctx, ndim, shape_, pshape_);
 }
 
-LWTEST_FIXTURE(roundtrip, 7_dim) {
+LWTEST_FIXTURE_SKIP(roundtrip, 7_dim) {
     const int8_t ndim = 7;
     int64_t shape_[] = {12, 15, 24, 16, 12, 8, 7};
 
     test_roundtrip(data->ctx, ndim, shape_, NULL);
 }
 
-LWTEST_FIXTURE(roundtrip, 8_dim) {
+LWTEST_FIXTURE_SKIP(roundtrip, 8_dim) {
     const int8_t ndim = 8;
     int64_t shape_[] = {4, 3, 8, 5, 10, 12, 6, 4};
     int64_t pshape_[] = {3, 2, 3, 3, 4, 5, 4, 2};

@@ -201,7 +201,7 @@ LWTEST_FIXTURE(get_slice_buffer_2, ndim_5_plain) {
 
     test_get_slice_buffer_2(data->ctx, ndim, shape_, NULL, NULL, start_, stop_, pshape_dest_, result);
 }
-
+/*
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_6) {
     const int8_t ndim = 6;
     int64_t shape_[] = {10, 10, 10, 10, 10, 10};
@@ -227,7 +227,7 @@ LWTEST_FIXTURE(get_slice_buffer_2, ndim_6) {
     test_get_slice_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, start_, stop_, pshape_dest_, result);
 }
 
-/*
+
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_7_plain) {
     const int8_t ndim = 7;
     int64_t shape_[] = {10, 10, 10, 10, 10, 10, 10};

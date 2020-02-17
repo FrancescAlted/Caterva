@@ -18,7 +18,8 @@ double get_usec_chunk(blosc_timestamp_t last, blosc_timestamp_t current,
     return (elapsed_usecs / (double) niter_);
 }
 
-static void test_to_buffer_2(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, int64_t *pshape_, int64_t *spshape_) {
+static void test_to_buffer_3(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, int64_t *pshape_, int64_t *spshape_,
+                            double *result) {
 
     blosc_timestamp_t last, current;
     caterva_dims_t shape = caterva_new_dims(shape_, ndim);
@@ -46,33 +47,33 @@ static void test_to_buffer_2(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, i
     int niter = 5;
     blosc_set_timestamp(&last);
     for (int i = 0; i < niter; i++) {
-        caterva_to_buffer_2(src, buf_dest);
+        caterva_to_buffer_3(src, buf_dest);
     }
     blosc_set_timestamp(&current);
     double tt = get_usec_chunk(last, current, niter);
     printf("Tiempo: %f", tt);
 
-    assert_buf(buf_dest, buf_src, (size_t)src->size, 1e-14);
+    assert_buf(buf_dest, result, (size_t)src->size, 1e-14);
     free(buf_src);
     free(buf_dest);
     caterva_free_array(src);
 }
 
-LWTEST_DATA(to_buffer_2) {
+LWTEST_DATA(to_buffer_3) {
     caterva_ctx_t *ctx;
 };
 
-LWTEST_SETUP(to_buffer_2) {
+LWTEST_SETUP(to_buffer_3) {
     data->ctx = caterva_new_ctx(NULL, NULL, BLOSC2_CPARAMS_DEFAULTS, BLOSC2_DPARAMS_DEFAULTS);
     data->ctx->cparams.typesize = sizeof(double);
 }
 
-LWTEST_TEARDOWN(to_buffer_2) {
+LWTEST_TEARDOWN(to_buffer_3) {
     caterva_free_ctx(data->ctx);
 }
 
 /*
-LWTEST_FIXTURE(to_buffer_2, ndim_2) {
+LWTEST_FIXTURE(to_buffer_3, ndim_2) {
     const int8_t ndim = 2;
     int64_t shape_[] = {10, 10};
     int64_t pshape_[] = {2, 3};
@@ -87,10 +88,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_2) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_2_2) {
+LWTEST_FIXTURE(to_buffer_3, ndim_2_2) {
     const int8_t ndim = 2;
     int64_t shape_[] = {5, 6};
     int64_t pshape_[] = {3, 3};
@@ -104,10 +105,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_2_2) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_3_no_sp) {
+LWTEST_FIXTURE(to_buffer_3, ndim_3_no_sp) {
     const int8_t ndim = 3;
     int64_t shape_[] = {10, 10, 10};
     int64_t pshape_[] = {3, 5, 2};
@@ -121,10 +122,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_3_no_sp) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_3) {
+LWTEST_FIXTURE(to_buffer_3, ndim_3) {
     const int8_t ndim = 3;
     int64_t shape_[] = {5, 6, 3};
     int64_t pshape_[] = {3, 3, 3};
@@ -139,10 +140,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_3) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_5_no_sp) {
+LWTEST_FIXTURE(to_buffer_3, ndim_5_no_sp) {
     const int8_t ndim = 5;
     int64_t shape_[] = {10, 10, 10, 10, 10};
     int64_t pshape_[] = {3, 5, 2, 4, 5};
@@ -156,10 +157,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_5_no_sp) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_6) {
+LWTEST_FIXTURE(to_buffer_3, ndim_6) {
     const int8_t ndim = 6;
     int64_t shape_[] = {10, 10, 10, 10, 10, 10};
     int64_t pshape_[] = {3, 4, 2, 2, 2, 3};
@@ -173,10 +174,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_6) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 
-LWTEST_FIXTURE(to_buffer_2, ndim_7_no_sp) {
+LWTEST_FIXTURE(to_buffer_3, ndim_7_no_sp) {
     const int8_t ndim = 7;
     int64_t shape_[] = {4, 5, 3, 4, 4, 5, 2};
     int64_t pshape_[] = {3, 4, 2, 2, 2, 3, 1};
@@ -190,10 +191,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_7_no_sp) {
         result[i] = (double) i;
     }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, result);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
 */
-LWTEST_FIXTURE(to_buffer_2, ndim_3_hard) {
+LWTEST_FIXTURE(to_buffer_3, ndim_3_hard) {
     const int8_t ndim = 3;
     int64_t shape_[] = {200, 200, 200};
     int64_t pshape_[] = {50, 50, 50};
@@ -203,6 +204,10 @@ LWTEST_FIXTURE(to_buffer_2, ndim_3_hard) {
     for (int i = 0; i < ndim; ++i) {
         buf_size *= (shape_[i]);
     }
+    double *result = (double *) malloc((size_t)buf_size * data->ctx->cparams.typesize);
+    for (int64_t i = 0; i < buf_size; ++i) {
+        result[i] = (double) i;
+    }
 
-    test_to_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_);
+    test_to_buffer_3(data->ctx, ndim, shape_, pshape_, spshape_, result);
 }
