@@ -44,7 +44,7 @@ static void test_to_buffer_3(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, i
 
     double *buf_dest = (double *) malloc((size_t)buf_size * src->ctx->cparams.typesize);
 
-    int niter = 5;
+    int niter = 10;
     blosc_set_timestamp(&last);
     for (int i = 0; i < niter; i++) {
         caterva_to_buffer_3(src, buf_dest);
@@ -66,6 +66,7 @@ LWTEST_DATA(to_buffer_3) {
 LWTEST_SETUP(to_buffer_3) {
     data->ctx = caterva_new_ctx(NULL, NULL, BLOSC2_CPARAMS_DEFAULTS, BLOSC2_DPARAMS_DEFAULTS);
     data->ctx->cparams.typesize = sizeof(double);
+    data->ctx->cparams.compcode = BLOSC_LZ4;
 }
 
 LWTEST_TEARDOWN(to_buffer_3) {
@@ -196,9 +197,9 @@ LWTEST_FIXTURE(to_buffer_3, ndim_7_no_sp) {
 */
 LWTEST_FIXTURE(to_buffer_3, ndim_3_hard) {
     const int8_t ndim = 3;
-    int64_t shape_[] = {200, 200, 200};
-    int64_t pshape_[] = {50, 50, 50};
-    int64_t spshape_[] = {11, 11, 11};
+    int64_t shape_[] = {252, 252, 252};
+    int64_t pshape_[] = {64, 64, 64};
+    int64_t spshape_[] = {16, 16, 16};
 
     int64_t buf_size = 1;
     for (int i = 0; i < ndim; ++i) {
