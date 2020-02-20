@@ -82,7 +82,7 @@ LWTEST_FIXTURE(repart, ndim2) {
     int64_t pshape_[] = {56, 53};
     int64_t pshape_dest_[] = {133, 103};
 
-    test_reshape(data->ctx, ndim, shape_, pshape_, NULL);
+    test_reshape(data->ctx, ndim, shape_, pshape_, pshape_dest_);
 }
 
 LWTEST_FIXTURE(repart, ndim6) {

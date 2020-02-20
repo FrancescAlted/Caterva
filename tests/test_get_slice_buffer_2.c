@@ -10,10 +10,18 @@
  */
 
 #include "test_common.h"
+#include "time.h"
+
+double get_usec_chunk_gslb2(blosc_timestamp_t last, blosc_timestamp_t current,
+                           int niter_) {
+    double elapsed_usecs = 1e-3 * blosc_elapsed_nsecs(last, current);
+    return (elapsed_usecs / (double) niter_);
+}
 
 static void test_get_slice_buffer_2(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, int64_t *pshape_, int64_t *spshape_,
                            int64_t *start_, int64_t *stop_, int64_t *pshape_dest_, double *result) {
 
+    blosc_timestamp_t last, current;
     caterva_dims_t shape = caterva_new_dims(shape_, ndim);
     caterva_dims_t start = caterva_new_dims(start_, ndim);
     caterva_dims_t stop = caterva_new_dims(stop_, ndim);
@@ -49,7 +57,16 @@ static void test_get_slice_buffer_2(caterva_ctx_t *ctx, int8_t ndim, int64_t *sh
     double *dest_buf = (double *) malloc((size_t)dest_size * src->ctx->cparams.typesize);
 
     caterva_dims_t pshape_dest = caterva_new_dims(pshape_dest_, ndim);
-    caterva_get_slice_buffer_2(dest_buf, src, &start, &stop, &pshape_dest);
+
+    int niter = 10;
+    blosc_set_timestamp(&last);
+    for (int i = 0; i < niter; i++) {
+        caterva_get_slice_buffer_2(dest_buf, src, &start, &stop, &pshape_dest);
+    }
+    blosc_set_timestamp(&current);
+    double tt = get_usec_chunk_gslb2(last, current, niter);
+    printf("Tiempo: %f", tt);
+
     assert_buf(dest_buf, result, (size_t)dest_size, 1e-14);
     free(buf_src);
     free(dest_buf);
@@ -69,7 +86,7 @@ LWTEST_SETUP(get_slice_buffer_2) {
 LWTEST_TEARDOWN(get_slice_buffer_2) {
     caterva_free_ctx(data->ctx);
 }
-
+/*
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_2) {
     const int8_t ndim = 2;
     int64_t shape_[] = {10, 10};
@@ -158,12 +175,12 @@ LWTEST_FIXTURE(get_slice_buffer_2, ndim_3) {
 
     test_get_slice_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, start_, stop_, pshape_dest_, result);
 }
-
+*/
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_4_no_sp) {
     const int8_t ndim = 4;
     int64_t shape_[] = {10, 10, 10, 10};
     int64_t pshape_[] = {3, 2, 3, 2};
-    int64_t spshape_[] = {1, 1, 1, 1};
+    int64_t spshape_[] = {3, 2, 3, 2};
     int64_t start_[] = {5, 3, 9, 2};
     int64_t stop_[] = {9, 6, 10, 7};
     int64_t pshape_dest_[] = {0, 0, 0, 0};
@@ -181,7 +198,7 @@ LWTEST_FIXTURE(get_slice_buffer_2, ndim_4_no_sp) {
     test_get_slice_buffer_2(data->ctx, ndim, shape_, pshape_, spshape_, start_, stop_, pshape_dest_, result);
 }
 
-
+/*
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_5_plain) {
     const int8_t ndim = 5;
     int64_t shape_[] = {10, 10, 10, 10, 10};
@@ -201,7 +218,7 @@ LWTEST_FIXTURE(get_slice_buffer_2, ndim_5_plain) {
 
     test_get_slice_buffer_2(data->ctx, ndim, shape_, NULL, NULL, start_, stop_, pshape_dest_, result);
 }
-/*
+
 LWTEST_FIXTURE(get_slice_buffer_2, ndim_6) {
     const int8_t ndim = 6;
     int64_t shape_[] = {10, 10, 10, 10, 10, 10};

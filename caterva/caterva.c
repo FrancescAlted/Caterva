@@ -1218,6 +1218,129 @@ int caterva_to_buffer_2(caterva_array_t *src, void *dest) {
 
 }
 
+int caterva_to_buffer_2_2(caterva_array_t *src, void *dest) {
+    if (src->storage == CATERVA_STORAGE_BLOSC) {
+        int8_t *d_b = (int8_t *) dest;
+        int64_t s_shape[CATERVA_MAXDIM];
+        int64_t s_pshape[CATERVA_MAXDIM];
+        int64_t s_spshape[CATERVA_MAXDIM];
+        int64_t s_eshape[CATERVA_MAXDIM];
+        int64_t s_epshape[CATERVA_MAXDIM];
+        int8_t s_ndim = src->ndim;
+
+        for (int i = 0; i < CATERVA_MAXDIM; ++i) {
+            s_shape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->shape[i];
+            s_eshape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->eshape[i];
+            s_epshape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->eshape[i];
+            s_pshape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->pshape[i];
+            s_spshape[(CATERVA_MAXDIM - s_ndim + i) % CATERVA_MAXDIM] = src->pshape[i];
+        }
+
+        /* Initialise chunk buffers */
+        caterva_ctx_t *ctx = src->ctx;
+        int typesize = src->sc->typesize;
+        uint8_t *chunk;
+        uint8_t spart = ctx->alloc((size_t) src->spsize * typesize);
+
+        /* Calculate the constants out of the for  */
+        int64_t aux[CATERVA_MAXDIM];
+        aux[7] = s_eshape[7] / s_pshape[7];
+        for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+            aux[i] = s_eshape[i] / s_pshape[i] * aux[i + 1];
+        }
+        int64_t aux2[CATERVA_MAXDIM];
+        aux[7] = s_epshape[7] / s_spshape[7];
+        for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+            aux[i] = s_epshape[i] / s_spshape[i] * aux2[i + 1];
+        }
+        /* Fill array from schunk (chunk by chunk) */
+        bool needs_free, blankline = true;
+        int64_t desp[CATERVA_MAXDIM], pad[CATERVA_MAXDIM];
+        for (int64_t ci = 0; ci < src->esize / src->psize; ci++) {
+            /* Calculate the coord. of the chunk first element in arr buffer */
+            desp[7] = ci % aux[7] * s_pshape[7];
+            for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+                desp[i] = ci % (aux[i]) / (aux[i + 1]) * s_pshape[i];
+            }
+            /* Calculate if pad with 0 are needed in this chunk */
+            for (int i = CATERVA_MAXDIM - 1; i >= 0; i--) {
+                if (desp[i] + s_pshape[i] > s_shape[i]) {
+                    pad[i] = (desp[i] + s_pshape[i] - s_shape[i]) % s_spshape[i];
+                } else {
+                    pad[i] = 0;
+                }
+            }
+            blosc2_schunk_get_chunk(src->sc, (int) ci, &chunk, &needs_free);
+
+            int64_t orig[CATERVA_MAXDIM], padf[CATERVA_MAXDIM], r[CATERVA_MAXDIM];
+            for (int spi = 0; spi < src->epsize / src->spsize; spi++) {
+                /* Calculate the coord. of the subpartition first element in chunk */
+                orig[7] = spi % aux2[7] * s_spshape[7];
+                for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+                    orig[i] = spi % (aux2[i]) / (aux2[i + 1]) * s_spshape[i];
+                }
+                /* Calculate if pad with 0 are needed in this chunk */
+                for (int i = CATERVA_MAXDIM - 1; i >= 0; i--) {
+                    if (orig[i] + s_spshape[i] > s_pshape[i]) {
+                        padf[i] = pad[i] + orig[i] + s_spshape[i] - s_pshape[i];
+                    } else {
+                        padf[i] = pad[i];
+                    }
+                    if (padf[i] < s_pshape[i]){
+                        blankline = false;
+                    }
+                }
+                if (! blankline) {
+                    for (int i = CATERVA_MAXDIM - 1; i >= 0; i--) {
+                        r[i] = s_spshape[i] - padf[i];
+                    }
+
+                    blosc_getitem(&chunk, spi * src->spsize, src->spsize, &spart);
+
+                    /* Copy each line of data from chunk to d_b */
+                    int64_t s_coord_f, d_coord_f, s_a, d_a;
+                    int64_t ii[CATERVA_MAXDIM];
+                    for (ii[6] = 0; ii[6] < r[6]; ii[6]++) {
+                        for (ii[5] = 0; ii[5] < r[5]; ii[5]++) {
+                            for (ii[4] = 0; ii[4] < r[4]; ii[4]++) {
+                                for (ii[3] = 0; ii[3] < r[3]; ii[3]++) {
+                                    for (ii[2] = 0; ii[2] < r[2]; ii[2]++) {
+                                        for (ii[1] = 0; ii[1] < r[1]; ii[1]++) {
+                                            for (ii[0] = 0; ii[0] < r[0]; ii[0]++) {
+                                                s_coord_f = 0;
+                                                s_a = s_spshape[7];
+                                                for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+                                                    s_coord_f += ii[i] * s_a;
+                                                    s_a *= s_spshape[i];
+                                                }
+                                                d_coord_f = desp[7] + orig[7];
+                                                d_a = s_shape[7];
+                                                for (int i = CATERVA_MAXDIM - 2; i >= 0; i--) {
+                                                    d_coord_f += (desp[i] + orig[i] + ii[i]) * d_a;
+                                                    d_a *= s_shape[i];
+                                                }
+                                                memcpy(&d_b[d_coord_f * typesize], &chunk[s_coord_f * typesize],
+                                                       r[7] * typesize);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+            }
+
+        }
+        ctx->free(chunk);
+        return 0;
+    } else {
+        memcpy(dest, src->buf, src->size * (size_t) src->ctx->cparams.typesize);
+    }
+
+}
 
 int caterva_to_buffer_3(caterva_array_t *src, void *dest) {
     int64_t start_[CATERVA_MAXDIM];
