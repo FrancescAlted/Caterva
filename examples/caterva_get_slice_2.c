@@ -13,14 +13,22 @@
 
 int main(){
     // Create a context
-    caterva_ctx_t *ctx = caterva_new_ctx(NULL, NULL, BLOSC2_CPARAMS_DEFAULTS, BLOSC2_DPARAMS_DEFAULTS);
+    blosc2_cparams cparams = BLOSC2_CPARAMS_DEFAULTS;
+    cparams.compcode = BLOSC_BLOSCLZ;
+    caterva_ctx_t *ctx = caterva_new_ctx(NULL, NULL, cparams, BLOSC2_DPARAMS_DEFAULTS);
     ctx->cparams.typesize = sizeof(double);
 
     // Define the partition shape for the first array
     const int8_t ndim = 3;
-    int64_t shape_[] = {252, 252, 252};
+    const int64_t dimx = 500, dimy = 500, dimz = 500;
+    int64_t shape_[] = {dimx, dimy, dimz};
     int64_t pshape_[] = {64, 64, 64};
-    int64_t spshape_[] = {15, 15, 15};
+    int64_t spshape_[] = {16, 16, 16};
+    // int64_t start_[] = {0, 0, 0};  // 3-d slice
+    // int64_t start_[] = {dimx - 1, 0, 0};  // 2-d slice
+    int64_t start_[] = {0, dimy - 1, 0};  // 2-d slice
+    // int64_t start_[] = {dimx - 1, dimy - 1, 0};  // 1-d slice
+    int64_t stop_[] = {dimx, dimy, dimz};
 
     blosc_timestamp_t last, current;
     caterva_dims_t shape = caterva_new_dims(shape_, ndim);
@@ -41,9 +49,7 @@ int main(){
     caterva_array_t *cat2 = caterva_empty_array_2(ctx, NULL, &pshape, &spshape);
     caterva_from_buffer_2(cat2, &shape, buf_src);
 
-    int64_t start_[] = {47, 0, 0};
     caterva_dims_t start = caterva_new_dims(start_, ndim);
-    int64_t stop_[] = {48, 252, 252};
     caterva_dims_t stop = caterva_new_dims(stop_, ndim);
 
     uint64_t dest_size = 1;

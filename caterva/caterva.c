@@ -304,6 +304,7 @@ caterva_array_t *caterva_empty_array_2(caterva_ctx_t *ctx, blosc2_frame *frame, 
             }
             carr->epsize *= carr->epshape[i];
         }
+        ctx->cparams.blocksize = carr->spsize * ctx->cparams.typesize;
 
         blosc2_schunk *sc = blosc2_new_schunk(ctx->cparams, ctx->dparams, frame);
         if (frame != NULL) {
@@ -1296,7 +1297,6 @@ int caterva_to_buffer_2_2(caterva_array_t *src, void *dest) {
                     }
 
                     blosc_getitem(&chunk, spi * src->spsize, src->spsize, &spart);
-
                     /* Copy each line of data from chunk to d_b */
                     int64_t s_coord_f, d_coord_f, s_a, d_a;
                     int64_t ii[CATERVA_MAXDIM];
@@ -1643,7 +1643,9 @@ int caterva_get_slice_buffer_2(void *dest, caterva_array_t *src, caterva_dims_t 
                                                                             sinc *= (int) (s_epshape[i] / s_spshape[i]);
                                                                         }
                                                                         s_start = nspart * src->spsize;
-                                                                        blosc_getitem(chunk, s_start, src->spsize, spart);
+                                                                        //blosc_getitem(chunk, s_start, src->spsize, spart);
+                                                                        blosc2_getitem_ctx(src->sc->dctx, chunk, s_start, src->spsize, spart);
+
                                                                         /* memcpy */
                                                                         for (int i = 0; i < CATERVA_MAXDIM; ++i) {
                                                                             if (jj[i] == j_start[i] && ii[i] == i_start[i]) {
@@ -1666,40 +1668,30 @@ int caterva_get_slice_buffer_2(void *dest, caterva_array_t *src, caterva_dims_t 
                                                                                             for (kk[5] = sp_start[5]; kk[5] < sp_stop[5]; ++kk[5]) {
                                                                                                 for (kk[6] = sp_start[6]; kk[6] < sp_stop[6]; ++kk[6]) {
                                                                                                     // check we are not in an empty line (padding)
-                                                                                                    bool empty_line = false;
-
-                                                                                                    for (int i = 0; i < 7; i++) {
-                                                                                                        if ((jj[i] * s_spshape[i] + kk[i]) >= s_pshape[i]) {
-                                                                                                            empty_line = true;
-                                                                                                            break;
-                                                                                                        }
-                                                                                                    }
-                                                                                                    if (! empty_line) {
-                                                                                                        // case padding in dim7
-                                                                                                        if ((jj[7] + 1) * s_spshape[7] > s_pshape[7]) {
-                                                                                                            int64_t lastn = s_pshape[7] % s_spshape[7];
-                                                                                                            if (lastn < sp_stop[7]) {
-                                                                                                                sp_stop[7] = lastn;
-                                                                                                            }
-                                                                                                        }
-                                                                                                        // Copy each line of data from spart to bdest
-                                                                                                        int64_t sp_pointer = 0;
-                                                                                                        int64_t sp_pointer_inc = 1;
-                                                                                                        for (int i = CATERVA_MAXDIM - 1; i >= 0; --i) {
-                                                                                                            sp_pointer += kk[i] * sp_pointer_inc;
-                                                                                                            sp_pointer_inc *= s_spshape[i];
-                                                                                                        }
-                                                                                                        int64_t buf_pointer = 0;
-                                                                                                        int64_t buf_pointer_inc = 1;
-                                                                                                        for (int i = CATERVA_MAXDIM - 1; i >= 0; --i) {
-                                                                                                            buf_pointer += (kk[i] + s_spshape[i] * jj[i] + s_pshape[i] * ii[i] -
-                                                                                                                            start_[i]) * buf_pointer_inc;
-                                                                                                            buf_pointer_inc *= d_pshape_[i];
-                                                                                                        }
-                                                                                                        memcpy(&bdest[buf_pointer * typesize],
-                                                                                                               &spart[sp_pointer * typesize],
-                                                                                                               (sp_stop[7] - sp_start[7]) * typesize);
-                                                                                                    }
+                                                                                                      // case padding in dim7
+                                                                                                      if ((jj[7] + 1) * s_spshape[7] > s_pshape[7]) {
+                                                                                                          int64_t lastn = s_pshape[7] % s_spshape[7];
+                                                                                                          if (lastn < sp_stop[7]) {
+                                                                                                              sp_stop[7] = lastn;
+                                                                                                          }
+                                                                                                      }
+                                                                                                      // Copy each line of data from spart to bdest
+                                                                                                      int64_t sp_pointer = 0;
+                                                                                                      int64_t sp_pointer_inc = 1;
+                                                                                                      for (int i = s_ndim - 1; i >= 0; --i) {
+                                                                                                          sp_pointer += kk[i] * sp_pointer_inc;
+                                                                                                          sp_pointer_inc *= s_spshape[i];
+                                                                                                      }
+                                                                                                      int64_t buf_pointer = 0;
+                                                                                                      int64_t buf_pointer_inc = 1;
+                                                                                                      for (int i = s_ndim - 1; i >= 0; --i) {
+                                                                                                          buf_pointer += (kk[i] + s_spshape[i] * jj[i] + s_pshape[i] * ii[i] -
+                                                                                                                          start_[i]) * buf_pointer_inc;
+                                                                                                          buf_pointer_inc *= d_pshape_[i];
+                                                                                                      }
+                                                                                                      memcpy(&bdest[buf_pointer * typesize],
+                                                                                                             &spart[sp_pointer * typesize],
+                                                                                                             (sp_stop[7] - sp_start[7]) * typesize);
                                                                                                 }
                                                                                             }
                                                                                         }

@@ -23,7 +23,7 @@ int main(){
     const int8_t ndim = 3;
     int64_t shape_[] = {252, 252, 252};
     int64_t pshape_[] = {64, 64, 64};
-    int64_t spshape_[] = {16, 16, 16};
+    int64_t spshape_[] = {15, 15, 15};
 
     int64_t buf_size = 1;
     for (int i = 0; i < ndim; ++i) {

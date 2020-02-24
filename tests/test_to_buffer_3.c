@@ -12,12 +12,6 @@
 #include "test_common.h"
 #include "time.h"
 
-double get_usec_chunk(blosc_timestamp_t last, blosc_timestamp_t current,
-                      int niter_) {
-    double elapsed_usecs = 1e-3 * blosc_elapsed_nsecs(last, current);
-    return (elapsed_usecs / (double) niter_);
-}
-
 static void test_to_buffer_3(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, int64_t *pshape_, int64_t *spshape_,
                             double *result) {
 
@@ -44,14 +38,7 @@ static void test_to_buffer_3(caterva_ctx_t *ctx, int8_t ndim, int64_t *shape_, i
 
     double *buf_dest = (double *) malloc((size_t)buf_size * src->ctx->cparams.typesize);
 
-    int niter = 10;
-    blosc_set_timestamp(&last);
-    for (int i = 0; i < niter; i++) {
-        caterva_to_buffer_3(src, buf_dest);
-    }
-    blosc_set_timestamp(&current);
-    double tt = get_usec_chunk(last, current, niter);
-    printf("Tiempo: %f", tt);
+    caterva_to_buffer_3(src, buf_dest);
 
     assert_buf(buf_dest, result, (size_t)src->size, 1e-14);
     free(buf_src);
